@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Solar Panel Power Simulator — quyosh elektr stansiyasi monitoring tizimi simulyatori">
+  <title>SOLARIS — Solar Panel Power Simulator</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Fon effektlari -->
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-glow bg-glow--1" aria-hidden="true"></div>
+  <div class="bg-glow bg-glow--2" aria-hidden="true"></div>
+
+  <!-- ===================== HEADER ===================== -->
+  <header class="topbar glass">
+    <div class="brand">
+      <div class="brand__logo" aria-hidden="true">
+        <svg viewBox="0 0 48 48" fill="none">
+          <defs>
+            <radialGradient id="logoSun">
+              <stop offset="0" stop-color="#fff3b0"/>
+              <stop offset="1" stop-color="#ff9f1c"/>
+            </radialGradient>
+          </defs>
+          <circle cx="24" cy="24" r="9" fill="url(#logoSun)"/>
+          <path d="M24 4v6M24 38v6M4 24h6M38 24h6M9.9 9.9l4.2 4.2M33.9 33.9l4.2 4.2M9.9 38.1l4.2-4.2M33.9 14.1l4.2-4.2"
+                stroke="#ffd23f" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="brand__title">SOLARIS<span>.sim</span></h1>
+        <p class="brand__sub">Quyosh elektr stansiyasi monitoring tizimi</p>
+      </div>
+    </div>
+
+    <div class="topbar__meta">
+      <div class="meta-item">
+        <span class="meta-label">Ish vaqti</span>
+        <span class="meta-value" id="uptime">00:00:00</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Mahalliy vaqt</span>
+        <span class="meta-value" id="clock">--:--:--</span>
+      </div>
+      <div class="system-status" id="systemStatus" data-state="off" role="status" aria-live="polite">
+        <span class="status-dot"></span>
+        <span id="systemStatusText">TIZIM O'CHIQ</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- ===================== DASHBOARD ===================== -->
+    <section class="dashboard" aria-label="Umumiy statistika">
+
+      <!-- Umumiy quvvat indikatori -->
+      <article class="card glass total-card">
+        <div class="card__head">
+          <h2 class="card__title">Umumiy quvvat</h2>
+          <span class="live-tag"><span class="live-tag__dot"></span>LIVE</span>
+        </div>
+
+        <div class="total-gauge" id="totalGauge" data-level="idle">
+          <svg class="total-gauge__svg" viewBox="0 0 220 220" aria-hidden="true">
+            <g id="totalTicks"></g>
+            <circle class="total-gauge__track" cx="110" cy="110" r="88" transform="rotate(135 110 110)"/>
+            <circle class="total-gauge__fill" id="totalGaugeFill" cx="110" cy="110" r="88" transform="rotate(135 110 110)"/>
+          </svg>
+          <div class="total-gauge__center">
+            <span class="total-gauge__label">JAMI</span>
+            <span class="total-gauge__value" id="totalGaugeValue">0</span>
+            <span class="total-gauge__unit" id="totalGaugeUnit">W</span>
+            <span class="total-gauge__percent" id="totalGaugePercent">0%</span>
+          </div>
+        </div>
+
+        <div class="total-card__foot">
+          <div class="mini">
+            <span class="mini__label">Ishlab chiqarilgan energiya</span>
+            <span class="mini__value" id="energyValue">0.00 Wh</span>
+          </div>
+          <div class="mini">
+            <span class="mini__label">Pik quvvat</span>
+            <span class="mini__value" id="peakValue">0 W</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Statistik kartalar -->
+      <div class="stats">
+        <article class="card glass stat" data-accent="green">
+          <div class="stat__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </div>
+          <div class="stat__body">
+            <span class="stat__label">Umumiy ishlab chiqarilayotgan quvvat</span>
+            <span class="stat__value" id="statTotal" aria-live="polite">0 W</span>
+            <span class="stat__sub">Real vaqtdagi jami generatsiya</span>
+          </div>
+        </article>
+
+        <article class="card glass stat" data-accent="blue">
+          <div class="stat__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14l4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
+          </div>
+          <div class="stat__body">
+            <span class="stat__label">Maksimal umumiy quvvat</span>
+            <span class="stat__value" id="statMax">0 W</span>
+            <span class="stat__sub">3 ta panelning nominal quvvati</span>
+          </div>
+        </article>
+
+        <article class="card glass stat" data-accent="yellow" id="statEffCard" data-level="idle">
+          <div class="stat__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5 5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+          </div>
+          <div class="stat__body">
+            <span class="stat__label">Umumiy samaradorlik</span>
+            <span class="stat__value" id="statEff">0.0%</span>
+            <div class="stat__bar"><span id="statEffBar"></span></div>
+          </div>
+        </article>
+
+        <article class="card glass stat" data-accent="cyan">
+          <div class="stat__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="1"/><path d="M3 8h18M3 12h18M9 4v12M15 4v12M12 16v4M8 20h8"/></svg>
+          </div>
+          <div class="stat__body">
+            <span class="stat__label">Ishlayotgan panellar</span>
+            <span class="stat__value" id="statActive">0 / 3</span>
+            <span class="stat__sub" id="statActiveSub">Panellar o'chiq</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===================== BOSHQARUV PANELI ===================== -->
+    <section class="card glass control" id="controlPanel" aria-label="Boshqaruv paneli">
+      <div class="card__head">
+        <div>
+          <h2 class="card__title">Boshqaruv paneli</h2>
+          <p class="card__hint">Har bir panel uchun maksimal quvvatni vattlarda (W) kiriting</p>
+        </div>
+        <span class="lock-note" id="lockNote">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+          Simulyatsiya vaqtida tahrirlab bo'lmaydi
+        </span>
+      </div>
+
+      <div class="control__grid">
+        <div class="field" style="--accent: #3ab7ff">
+          <label for="max-0"><span class="field__dot"></span>1-panel · maksimal quvvat</label>
+          <div class="field__input">
+            <input type="number" id="max-0" min="1" step="any" value="500" inputmode="decimal" autocomplete="off">
+            <span class="field__unit">W</span>
+          </div>
+          <p class="field__error" id="err-0" aria-live="polite"></p>
+        </div>
+
+        <div class="field" style="--accent: #ffd23f">
+          <label for="max-1"><span class="field__dot"></span>2-panel · maksimal quvvat</label>
+          <div class="field__input">
+            <input type="number" id="max-1" min="1" step="any" value="350" inputmode="decimal" autocomplete="off">
+            <span class="field__unit">W</span>
+          </div>
+          <p class="field__error" id="err-1" aria-live="polite"></p>
+        </div>
+
+        <div class="field" style="--accent: #c084fc">
+          <label for="max-2"><span class="field__dot"></span>3-panel · maksimal quvvat</label>
+          <div class="field__input">
+            <input type="number" id="max-2" min="1" step="any" value="700" inputmode="decimal" autocomplete="off">
+            <span class="field__unit">W</span>
+          </div>
+          <p class="field__error" id="err-2" aria-live="polite"></p>
+        </div>
+      </div>
+
+      <div class="control__actions">
+        <button type="button" class="btn btn--start" id="btnStart">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"/></svg>
+          ISHGA TUSHIRISH
+        </button>
+        <button type="button" class="btn btn--stop" id="btnStop" disabled>
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+          TO'XTATISH
+        </button>
+        <button type="button" class="btn btn--reset" id="btnReset">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+          QAYTA ISHGA TUSHIRISH
+        </button>
+      </div>
+    </section>
+
+    <!-- ===================== QUYOSH PANELLARI ===================== -->
+    <section class="array" id="array" aria-label="Quyosh panellari massivi">
+      <div class="array__head">
+        <div>
+          <h2 class="section-title">Quyosh panellari massivi</h2>
+          <p class="section-sub">Fotovoltaik modullarning real vaqtdagi holati</p>
+        </div>
+        <div class="irradiance">
+          <span class="irradiance__label">Quyosh nurlanishi</span>
+          <span class="irradiance__value"><b id="irradiance">0</b> W/m²</span>
+        </div>
+      </div>
+
+      <div class="sun" aria-hidden="true">
+        <div class="sun__rays"></div>
+        <div class="sun__core"></div>
+      </div>
+
+      <div class="panels-grid" id="panelsGrid"></div>
+    </section>
+
+    <!-- ===================== GRAFIK ===================== -->
+    <section class="card glass chart-card" aria-label="Real vaqt grafigi">
+      <div class="card__head">
+        <div>
+          <h2 class="card__title">Real vaqt monitoringi</h2>
+          <p class="card__hint">Oxirgi 30 soniyadagi quvvat o'zgarishi</p>
+        </div>
+        <span class="live-tag"><span class="live-tag__dot"></span>1 s</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="powerChart"></canvas>
+        <div class="chart-empty" id="chartEmpty">Simulyatsiya ishga tushirilishi kutilmoqda…</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>SOLARIS.sim · Solar Panel Power Simulator</span>
+    <span>HTML5 · CSS3 · Vanilla JS · Chart.js</span>
+  </footer>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+  <noscript>
+    <div class="noscript">Simulyator ishlashi uchun JavaScript yoqilgan bo'lishi kerak.</div>
+  </noscript>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
